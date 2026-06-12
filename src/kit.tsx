@@ -2,6 +2,7 @@ import React from "react";
 import { Text, View, Image } from "@react-pdf/renderer";
 import type { ReporteSubseccion, ReportePhoto } from "./types";
 import type { ReportTheme } from "./themes";
+import { Donut, Barras, Tabla } from "./charts";
 
 // Primitivas compartidas por los documentos Reporte (con portada y simple).
 // Cada primitiva respeta las VARIANTES del tema (datosVariant, h1Variant), de
@@ -150,6 +151,21 @@ export function makeStyles(t: ReportTheme): Styles {
     fbox: { width: "48%", marginRight: "2%", marginBottom: 10 },
     foto: { width: "100%", height: 132, objectFit: "cover", borderRadius: 2 },
     cap: { fontFamily: t.sans, fontSize: 7.5, color: t.muted, marginTop: 4 },
+
+    // ---- Graficos / tabla ----
+    chartRow: { flexDirection: "row", alignItems: "center", marginVertical: 8 },
+    donutCentroT: { fontFamily: t.sans, fontSize: 7, color: t.muted, textAlign: "center" },
+    donutCentroV: { fontFamily: t.display, fontWeight: t.titleWeight, fontSize: 10, color: t.ink, textAlign: "center" },
+    legendItem: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+    legendBox: { width: 9, height: 9, borderRadius: 2, marginRight: 6 },
+    legendTxt: { fontFamily: t.body, fontSize: 9, color: t.bodyColor },
+    barGrupoLab: { fontFamily: t.sans, fontSize: 8.5, color: t.ink },
+    barValLab: { fontFamily: t.sans, fontSize: 7.5, marginHorizontal: 4 },
+    chRow: { flexDirection: "row", backgroundColor: t.accent },
+    chTh: { color: "#ffffff", fontFamily: t.sans, fontWeight: 700, fontSize: 8, paddingVertical: 4, paddingHorizontal: 6, borderColor: "#ffffff", borderWidth: 0.5 },
+    chTr: { flexDirection: "row" },
+    chTd: { fontFamily: t.body, fontSize: 8.5, paddingVertical: 4, paddingHorizontal: 6, color: t.ink, borderColor: t.line, borderWidth: 0.5 },
+    chTdTot: { fontFamily: t.body, fontWeight: 700, fontSize: 8.5, paddingVertical: 4, paddingHorizontal: 6, color: "#ffffff", backgroundColor: t.accent, borderColor: "#ffffff", borderWidth: 0.5 },
   };
 }
 
@@ -263,6 +279,9 @@ export function Subseccion({ s, num, ss }: { s: Styles; num: string; ss: Reporte
           {p}
         </Text>
       ))}
+      {ss.donut ? <Donut s={s} donut={ss.donut} /> : null}
+      {ss.barras ? <Barras s={s} barras={ss.barras} /> : null}
+      {ss.tabla ? <Tabla s={s} tabla={ss.tabla} /> : null}
       {ss.lista && ss.lista.length > 0 ? (
         <View style={{ marginBottom: 6 }}>
           {ss.lista.map((it, i) => (

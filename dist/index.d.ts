@@ -8,12 +8,45 @@ interface ReporteKpi {
     k: string;
     v: string;
 }
+interface ReporteDonutSegmento {
+    label: string;
+    value: number;
+    valueLabel?: string;
+    color: string;
+}
+interface ReporteDonut {
+    segmentos: ReporteDonutSegmento[];
+    centroTitulo?: string;
+    centroValor?: string;
+}
+interface ReporteBarra {
+    label: string;
+    value: number;
+    valueLabel?: string;
+    color: string;
+}
+interface ReporteBarraGrupo {
+    label: string;
+    barras: ReporteBarra[];
+}
+interface ReporteBarras {
+    grupos: ReporteBarraGrupo[];
+}
+interface ReporteTabla {
+    columnas: string[];
+    filas: string[][];
+    resaltarUltima?: boolean;
+    alinearDerechaDesde?: number;
+}
 interface ReporteSubseccion {
     titulo: string;
     parrafos?: string[];
     lista?: string[];
     kpis?: ReporteKpi[];
     fotos?: ReportePhoto[];
+    donut?: ReporteDonut;
+    barras?: ReporteBarras;
+    tabla?: ReporteTabla;
 }
 interface ReporteSeccion {
     titulo: string;
@@ -106,6 +139,19 @@ declare function Subseccion({ s, num, ss }: {
     ss: ReporteSubseccion;
 }): react_jsx_runtime.JSX.Element;
 
+declare function Donut({ s, donut }: {
+    s: Styles;
+    donut: ReporteDonut;
+}): react_jsx_runtime.JSX.Element;
+declare function Barras({ s, barras }: {
+    s: Styles;
+    barras: ReporteBarras;
+}): react_jsx_runtime.JSX.Element;
+declare function Tabla({ s, tabla }: {
+    s: Styles;
+    tabla: ReporteTabla;
+}): react_jsx_runtime.JSX.Element;
+
 interface NetworkPatternProps {
     style?: any;
     viewBox?: string;
@@ -143,4 +189,4 @@ declare function registerReportFonts(fontsDir?: string): void;
 
 declare function placeholderPhoto(top: [number, number, number], bottom: [number, number, number], w?: number, h?: number): string;
 
-export { type AccentLevel, CoverPage, type DatoItem, Datos, type DatosVariant, Fotos, type H1Variant, NetworkPattern, type NetworkPatternProps, REPORT_THEMES, type ReportTheme, type ReportThemeKey, type ReporteData, ReporteDocument, type ReporteKpi, type ReporteMeta, type ReportePhoto, type ReporteSeccion, ReporteSimpleDocument, type ReporteSubseccion, SeccionHead, type Styles, Subseccion, THEME_CORPORATE, THEME_EDITORIAL, THEME_ED_MINIMO, THEME_ED_SUAVE, THEME_ED_TINTA, THEME_PROPUESTA, THEME_ROMBOS_EDITORIAL, THEME_ROMBOS_PROPUESTA, THEME_ROMBOS_TESORERIA, THEME_TECNICO, THEME_TESORERIA, makeStyles, placeholderPhoto, registerReportFonts };
+export { type AccentLevel, Barras, CoverPage, type DatoItem, Datos, type DatosVariant, Donut, Fotos, type H1Variant, NetworkPattern, type NetworkPatternProps, REPORT_THEMES, type ReportTheme, type ReportThemeKey, type ReporteBarra, type ReporteBarraGrupo, type ReporteBarras, type ReporteData, ReporteDocument, type ReporteDonut, type ReporteDonutSegmento, type ReporteKpi, type ReporteMeta, type ReportePhoto, type ReporteSeccion, ReporteSimpleDocument, type ReporteSubseccion, type ReporteTabla, SeccionHead, type Styles, Subseccion, THEME_CORPORATE, THEME_EDITORIAL, THEME_ED_MINIMO, THEME_ED_SUAVE, THEME_ED_TINTA, THEME_PROPUESTA, THEME_ROMBOS_EDITORIAL, THEME_ROMBOS_PROPUESTA, THEME_ROMBOS_TESORERIA, THEME_TECNICO, THEME_TESORERIA, Tabla, makeStyles, placeholderPhoto, registerReportFonts };

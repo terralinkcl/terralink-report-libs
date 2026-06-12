@@ -5,6 +5,7 @@
 export * from "./types";
 export * from "./themes";
 export * from "./kit";
+export { Donut, Barras, Tabla } from "./charts";
 export { NetworkPattern } from "./NetworkPattern";
 export type { NetworkPatternProps } from "./NetworkPattern";
 export { CoverPage } from "./CoverPage";

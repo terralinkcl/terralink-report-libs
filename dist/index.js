@@ -30,8 +30,10 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/index.ts
 var src_exports = {};
 __export(src_exports, {
+  Barras: () => Barras,
   CoverPage: () => CoverPage,
   Datos: () => Datos,
+  Donut: () => Donut,
   Fotos: () => Fotos,
   NetworkPattern: () => NetworkPattern,
   REPORT_THEMES: () => REPORT_THEMES,
@@ -50,6 +52,7 @@ __export(src_exports, {
   THEME_ROMBOS_TESORERIA: () => THEME_ROMBOS_TESORERIA,
   THEME_TECNICO: () => THEME_TECNICO,
   THEME_TESORERIA: () => THEME_TESORERIA,
+  Tabla: () => Tabla,
   makeStyles: () => makeStyles,
   placeholderPhoto: () => placeholderPhoto,
   registerReportFonts: () => registerReportFonts
@@ -235,8 +238,130 @@ var REPORT_THEMES = {
 };
 
 // src/kit.tsx
+var import_renderer2 = require("@react-pdf/renderer");
+
+// src/charts.tsx
 var import_renderer = require("@react-pdf/renderer");
 var import_jsx_runtime = require("react/jsx-runtime");
+function punto(cx, cy, r, anguloDeg) {
+  const rad = anguloDeg * Math.PI / 180;
+  return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+}
+function segmentosDonut(valores, colores, cx, cy, rExterno, rInterno) {
+  const total = valores.reduce((a, b) => a + (b > 0 ? b : 0), 0);
+  if (total <= 0) return [];
+  const segmentos = [];
+  let a0 = -90;
+  valores.forEach((v, i) => {
+    if (v <= 0) return;
+    const barrido = v / total * 360;
+    let a1 = a0 + barrido;
+    if (a1 - a0 >= 359.999) a1 = a0 + 359.999;
+    const largeArc = a1 - a0 > 180 ? 1 : 0;
+    const [ox0, oy0] = punto(cx, cy, rExterno, a0);
+    const [ox1, oy1] = punto(cx, cy, rExterno, a1);
+    const [ix1, iy1] = punto(cx, cy, rInterno, a1);
+    const [ix0, iy0] = punto(cx, cy, rInterno, a0);
+    const d = [
+      `M ${ox0.toFixed(2)} ${oy0.toFixed(2)}`,
+      `A ${rExterno} ${rExterno} 0 ${largeArc} 1 ${ox1.toFixed(2)} ${oy1.toFixed(2)}`,
+      `L ${ix1.toFixed(2)} ${iy1.toFixed(2)}`,
+      `A ${rInterno} ${rInterno} 0 ${largeArc} 0 ${ix0.toFixed(2)} ${iy0.toFixed(2)}`,
+      "Z"
+    ].join(" ");
+    segmentos.push({ d, color: colores[i] ?? "#999999" });
+    a0 = a1;
+  });
+  return segmentos;
+}
+function Donut({ s, donut }) {
+  const H = 130;
+  const cx = 70;
+  const cy = 65;
+  const segs = segmentosDonut(
+    donut.segmentos.map((x) => x.value),
+    donut.segmentos.map((x) => x.color),
+    cx,
+    cy,
+    58,
+    34
+  );
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: s.chartRow, wrap: false, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: { width: 140, height: H, position: "relative" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Svg, { width: 140, height: H, viewBox: `0 0 140 ${H}`, children: segs.map((seg, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Path, { d: seg.d, fill: seg.color }, i)) }),
+      donut.centroTitulo || donut.centroValor ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: { position: "absolute", top: cy - 14, left: 0, width: 140, alignItems: "center" }, children: [
+        donut.centroTitulo ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.donutCentroT, children: donut.centroTitulo }) : null,
+        donut.centroValor ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.donutCentroV, children: donut.centroValor }) : null
+      ] }) : null
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.View, { style: { flex: 1 }, children: donut.segmentos.map((seg, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: s.legendItem, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.View, { style: [s.legendBox, { backgroundColor: seg.color }] }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.Text, { style: s.legendTxt, children: [
+        seg.label,
+        seg.valueLabel ? `  ${seg.valueLabel}` : ""
+      ] })
+    ] }, i)) })
+  ] });
+}
+function Barras({ s, barras }) {
+  const W = 420;
+  const H = 175;
+  const baseY = 140;
+  const topY = 14;
+  const allVals = barras.grupos.flatMap((g) => g.barras.map((b) => b.value));
+  const maxVal = Math.max(...allVals, 1) * 1.15;
+  const grupoW = W / Math.max(barras.grupos.length, 1);
+  const maxBarras = Math.max(...barras.grupos.map((g) => g.barras.length), 1);
+  const barW = Math.min(46, grupoW / (maxBarras + 1));
+  const altura = (v) => v / maxVal * (baseY - topY);
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: { alignItems: "center", marginVertical: 8 }, wrap: false, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.Svg, { width: W, height: H, viewBox: `0 0 ${W} ${H}`, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Line, { x1: 20, y1: baseY, x2: W - 10, y2: baseY, stroke: "#cccccc", strokeWidth: 1 }),
+      barras.grupos.map((g, gi) => {
+        const center = gi * grupoW + grupoW / 2;
+        const n = g.barras.length;
+        const totalW = n * barW + (n - 1) * 8;
+        let x = center - totalW / 2;
+        return g.barras.map((b, bi) => {
+          const h = altura(b.value);
+          const rect = /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Rect, { x, y: baseY - h, width: barW, height: h, fill: b.color }, `${gi}-${bi}`);
+          x += barW + 8;
+          return rect;
+        });
+      })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.View, { style: { flexDirection: "row", width: W, marginTop: -2 }, children: barras.grupos.map((g, gi) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: { width: grupoW, alignItems: "center" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.barGrupoLab, children: g.label }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.View, { style: { flexDirection: "row", marginTop: 2, flexWrap: "wrap", justifyContent: "center" }, children: g.barras.map((b, bi) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.Text, { style: [s.barValLab, { color: b.color }], children: [
+        b.label,
+        ": ",
+        b.valueLabel ?? String(b.value)
+      ] }, bi)) })
+    ] }, gi)) })
+  ] });
+}
+function Tabla({ s, tabla }) {
+  const n = tabla.columnas.length;
+  const alignFrom = tabla.alinearDerechaDesde ?? 1;
+  const widths = tabla.columnas.map((_, i) => i === 0 ? "46%" : `${(54 / Math.max(n - 1, 1)).toFixed(2)}%`);
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: { marginVertical: 8 }, wrap: false, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.View, { style: s.chRow, children: tabla.columnas.map((c, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: [s.chTh, { width: widths[i], textAlign: i >= alignFrom ? "right" : "left" }], children: c }, i)) }),
+    tabla.filas.map((fila, fi) => {
+      const last = tabla.resaltarUltima && fi === tabla.filas.length - 1;
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.View, { style: s.chTr, children: fila.map((cell, ci) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        import_renderer.Text,
+        {
+          style: [last ? s.chTdTot : s.chTd, { width: widths[ci], textAlign: ci >= alignFrom ? "right" : "left" }],
+          children: cell
+        },
+        ci
+      )) }, fi);
+    })
+  ] });
+}
+
+// src/kit.tsx
+var import_jsx_runtime2 = require("react/jsx-runtime");
 function makeStyles(t) {
   const sansLabel = {
     fontFamily: t.sans,
@@ -357,78 +482,95 @@ function makeStyles(t) {
     fotos: { flexDirection: "row", flexWrap: "wrap", marginTop: 6, marginBottom: 4 },
     fbox: { width: "48%", marginRight: "2%", marginBottom: 10 },
     foto: { width: "100%", height: 132, objectFit: "cover", borderRadius: 2 },
-    cap: { fontFamily: t.sans, fontSize: 7.5, color: t.muted, marginTop: 4 }
+    cap: { fontFamily: t.sans, fontSize: 7.5, color: t.muted, marginTop: 4 },
+    // ---- Graficos / tabla ----
+    chartRow: { flexDirection: "row", alignItems: "center", marginVertical: 8 },
+    donutCentroT: { fontFamily: t.sans, fontSize: 7, color: t.muted, textAlign: "center" },
+    donutCentroV: { fontFamily: t.display, fontWeight: t.titleWeight, fontSize: 10, color: t.ink, textAlign: "center" },
+    legendItem: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+    legendBox: { width: 9, height: 9, borderRadius: 2, marginRight: 6 },
+    legendTxt: { fontFamily: t.body, fontSize: 9, color: t.bodyColor },
+    barGrupoLab: { fontFamily: t.sans, fontSize: 8.5, color: t.ink },
+    barValLab: { fontFamily: t.sans, fontSize: 7.5, marginHorizontal: 4 },
+    chRow: { flexDirection: "row", backgroundColor: t.accent },
+    chTh: { color: "#ffffff", fontFamily: t.sans, fontWeight: 700, fontSize: 8, paddingVertical: 4, paddingHorizontal: 6, borderColor: "#ffffff", borderWidth: 0.5 },
+    chTr: { flexDirection: "row" },
+    chTd: { fontFamily: t.body, fontSize: 8.5, paddingVertical: 4, paddingHorizontal: 6, color: t.ink, borderColor: t.line, borderWidth: 0.5 },
+    chTdTot: { fontFamily: t.body, fontWeight: 700, fontSize: 8.5, paddingVertical: 4, paddingHorizontal: 6, color: "#ffffff", backgroundColor: t.accent, borderColor: "#ffffff", borderWidth: 0.5 }
   };
 }
 function Fotos({ s, fotos }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.View, { style: s.fotos, children: fotos.map((f, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: s.fbox, wrap: false, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Image, { style: s.foto, src: f.url }),
-    f.caption ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.cap, children: f.caption }) : null
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: s.fotos, children: fotos.map((f, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.fbox, wrap: false, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Image, { style: s.foto, src: f.url }),
+    f.caption ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.cap, children: f.caption }) : null
   ] }, i)) });
 }
 function Datos({ s, theme, items }) {
   if (theme.datosVariant === "tarjetas") {
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.View, { style: s.cards, children: items.map((d, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.View, { style: s.card, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: s.cardIn, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.cardLab, children: d.label }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.cardVal, children: d.value })
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: s.cards, children: items.map((d, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: s.card, children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.cardIn, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.cardLab, children: d.label }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.cardVal, children: d.value })
     ] }) }, i)) });
   }
   if (theme.datosVariant === "tabla") {
     const rows = [];
     for (let i = 0; i < items.length; i += 2) rows.push(items.slice(i, i + 2));
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.View, { style: s.table, children: rows.map((pair, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: s.tRow, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.tTh, children: pair[0].label }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: pair[1] ? s.tTd : s.tTdLast, children: pair[0].value }),
-      pair[1] ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.tTh, children: pair[1].label }) : null,
-      pair[1] ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.tTdLast, children: pair[1].value }) : null
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: s.table, children: rows.map((pair, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.tRow, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.tTh, children: pair[0].label }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: pair[1] ? s.tTd : s.tTdLast, children: pair[0].value }),
+      pair[1] ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.tTh, children: pair[1].label }) : null,
+      pair[1] ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.tTdLast, children: pair[1].value }) : null
     ] }, i)) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.View, { style: s.fichas, children: items.map((d, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: s.fichaItem, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.fichaLab, children: d.label }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.fichaVal, children: d.value })
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: s.fichas, children: items.map((d, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.fichaItem, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.fichaLab, children: d.label }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.fichaVal, children: d.value })
   ] }, i)) });
 }
 function SeccionHead({ s, theme, num, titulo }) {
   if (theme.h1Variant === "chip") {
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: s.h1Chip, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.h1ChipBox, children: num }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.h1ChipT, children: titulo })
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.h1Chip, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h1ChipBox, children: num }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h1ChipT, children: titulo })
     ] });
   }
   if (theme.h1Variant === "barra") {
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: s.h1Barra, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.h1BarraN, children: `${num}.0` }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.h1BarraT, children: titulo })
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.h1Barra, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h1BarraN, children: `${num}.0` }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h1BarraT, children: titulo })
     ] });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: s.h1Numero, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.h1NumeroN, children: num }),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.h1NumeroT, children: titulo })
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.h1Numero, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h1NumeroN, children: num }),
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h1NumeroT, children: titulo })
   ] });
 }
 function Subseccion({ s, num, ss }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: { marginBottom: 12 }, children: [
-    ss.titulo ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: s.h2Wrap, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.View, { style: s.h2Tick }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.h2Num, children: num }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.h2, children: ss.titulo })
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: { marginBottom: 12 }, children: [
+    ss.titulo ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.h2Wrap, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: s.h2Tick }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h2Num, children: num }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h2, children: ss.titulo })
     ] }) : null,
-    ss.kpis && ss.kpis.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.View, { style: s.kpis, children: ss.kpis.map((it, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: s.kpi, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.kpiV, children: it.v }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.kpiK, children: it.k })
+    ss.kpis && ss.kpis.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: s.kpis, children: ss.kpis.map((it, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.kpi, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.kpiV, children: it.v }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.kpiK, children: it.k })
     ] }, i)) }) : null,
-    (ss.parrafos ?? []).map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.body, children: p }, i)),
-    ss.lista && ss.lista.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.View, { style: { marginBottom: 6 }, children: ss.lista.map((it, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_renderer.View, { style: s.li, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.liDot, children: "\u2014" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_renderer.Text, { style: s.liTxt, children: it })
+    (ss.parrafos ?? []).map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.body, children: p }, i)),
+    ss.donut ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Donut, { s, donut: ss.donut }) : null,
+    ss.barras ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Barras, { s, barras: ss.barras }) : null,
+    ss.tabla ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Tabla, { s, tabla: ss.tabla }) : null,
+    ss.lista && ss.lista.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: { marginBottom: 6 }, children: ss.lista.map((it, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.li, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.liDot, children: "\u2014" }),
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.liTxt, children: it })
     ] }, i)) }) : null,
-    ss.fotos && ss.fotos.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Fotos, { s, fotos: ss.fotos }) : null
+    ss.fotos && ss.fotos.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(Fotos, { s, fotos: ss.fotos }) : null
   ] });
 }
 
 // src/NetworkPattern.tsx
-var import_renderer2 = require("@react-pdf/renderer");
-var import_jsx_runtime2 = require("react/jsx-runtime");
+var import_renderer3 = require("@react-pdf/renderer");
+var import_jsx_runtime3 = require("react/jsx-runtime");
 var LINES = [
   [180, 340, 80, 280],
   [80, 280, 40, 360],
@@ -486,9 +628,9 @@ function NetworkPattern({
   accentColor = "#06B6D4",
   accentOpacity = 0.8
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.Svg, { viewBox, preserveAspectRatio: "xMidYMid slice", style, children: [
-    LINES.map(([x1, y1, x2, y2], i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-      import_renderer2.Line,
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_renderer3.Svg, { viewBox, preserveAspectRatio: "xMidYMid slice", style, children: [
+    LINES.map(([x1, y1, x2, y2], i) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+      import_renderer3.Line,
       {
         x1,
         y1,
@@ -500,26 +642,26 @@ function NetworkPattern({
       },
       `l${i}`
     )),
-    NODES.map(([cx, cy, r], i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Circle, { cx, cy, r, fill: nodeColor, fillOpacity: nodeOpacity }, `n${i}`)),
-    ACCENTS.map(([cx, cy, r], i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Circle, { cx, cy, r, fill: accentColor, fillOpacity: accentOpacity }, `a${i}`))
+    NODES.map(([cx, cy, r], i) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_renderer3.Circle, { cx, cy, r, fill: nodeColor, fillOpacity: nodeOpacity }, `n${i}`)),
+    ACCENTS.map(([cx, cy, r], i) => /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_renderer3.Circle, { cx, cy, r, fill: accentColor, fillOpacity: accentOpacity }, `a${i}`))
   ] });
 }
 
 // src/CoverPage.tsx
-var import_renderer3 = require("@react-pdf/renderer");
-var import_jsx_runtime3 = require("react/jsx-runtime");
+var import_renderer4 = require("@react-pdf/renderer");
+var import_jsx_runtime4 = require("react/jsx-runtime");
 function CoverPage({
   s,
   theme,
   meta,
   logo
 }) {
-  const metaItem = (lab, val) => val ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_renderer3.View, { style: s.coverMetaItem, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_renderer3.Text, { style: s.coverMetaLab, children: lab }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_renderer3.Text, { style: s.coverMetaVal, children: val })
+  const metaItem = (lab, val) => val ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_renderer4.View, { style: s.coverMetaItem, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.coverMetaLab, children: lab }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.coverMetaVal, children: val })
   ] }) : null;
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_renderer3.Page, { size: "A4", style: s.cover, children: [
-    theme.coverPattern ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_renderer4.Page, { size: "A4", style: s.cover, children: [
+    theme.coverPattern ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
       NetworkPattern,
       {
         style: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
@@ -531,16 +673,16 @@ function CoverPage({
         accentOpacity: 0.85
       }
     ) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_renderer3.View, { style: s.coverRule }),
-    theme.coverDark ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_renderer3.View, { style: s.coverLogoChip, children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_renderer3.Image, { style: s.coverLogoChipImg, src: logo }) }) : (
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.View, { style: s.coverRule }),
+    theme.coverDark ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.View, { style: s.coverLogoChip, children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Image, { style: s.coverLogoChipImg, src: logo }) }) : (
       // eslint-disable-next-line jsx-a11y/alt-text
-      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_renderer3.Image, { style: s.coverLogo, src: logo })
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Image, { style: s.coverLogo, src: logo })
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_renderer3.Text, { style: s.coverEyebrow, children: meta.eyebrow }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_renderer3.Text, { style: s.coverTitle, children: meta.titulo }),
-    meta.subtitulo ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_renderer3.Text, { style: s.coverSub, children: meta.subtitulo }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_renderer3.View, { style: s.spacer }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(import_renderer3.View, { style: s.coverMeta, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.coverEyebrow, children: meta.eyebrow }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.coverTitle, children: meta.titulo }),
+    meta.subtitulo ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.coverSub, children: meta.subtitulo }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.View, { style: s.spacer }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_renderer4.View, { style: s.coverMeta, children: [
       metaItem("Planta", meta.planta),
       metaItem("Periodo", meta.periodo),
       metaItem("C\xF3digo de documento", meta.codigo),
@@ -548,13 +690,13 @@ function CoverPage({
       metaItem("Elaborado por", meta.cargo ? `${meta.responsable} - ${meta.cargo}` : meta.responsable),
       metaItem("Revisado por", meta.revisado)
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_renderer3.Text, { style: s.coverFoot, children: "Terralink O&M  \xB7  Documento de uso interno  \xB7  Operaci\xF3n y Mantenimiento" })
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.coverFoot, children: "Terralink O&M  \xB7  Documento de uso interno  \xB7  Operaci\xF3n y Mantenimiento" })
   ] });
 }
 
 // src/ReporteDocument.tsx
-var import_renderer4 = require("@react-pdf/renderer");
-var import_jsx_runtime4 = require("react/jsx-runtime");
+var import_renderer5 = require("@react-pdf/renderer");
+var import_jsx_runtime5 = require("react/jsx-runtime");
 function buildToc(data) {
   const rows = [];
   data.secciones.forEach((sec, i) => {
@@ -576,49 +718,49 @@ function ReporteDocument({
   const s = makeStyles(theme);
   const { meta } = data;
   const toc = buildToc(data);
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_renderer4.Document, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(CoverPage, { s, theme, meta, logo }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_renderer4.Page, { size: "A4", style: s.page, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_renderer4.View, { style: s.runHead, fixed: true, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.runHeadT, children: meta.titulo }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.runHeadT, children: meta.planta })
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.Document, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(CoverPage, { s, theme, meta, logo }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.Page, { size: "A4", style: s.page, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.View, { style: s.runHead, fixed: true, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.runHeadT, children: meta.titulo }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.runHeadT, children: meta.planta })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_renderer4.View, { style: s.footer, fixed: true, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.footerT, children: meta.codigo ? `${meta.codigo}  \xB7  Terralink O&M` : "Terralink O&M" }),
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-          import_renderer4.Text,
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.View, { style: s.footer, fixed: true, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.footerT, children: meta.codigo ? `${meta.codigo}  \xB7  Terralink O&M` : "Terralink O&M" }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+          import_renderer5.Text,
           {
             style: s.footerT,
             render: ({ pageNumber, totalPages }) => `P\xE1gina ${pageNumber} / ${totalPages}`
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.tocKicker, children: "Contenido" }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.tocTitle, children: "\xCDndice" }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.View, { style: { marginTop: 10 }, children: toc.map(
-        (r, i) => r.nivel === 1 ? /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_renderer4.View, { style: s.tocRow1, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.tocNum1, children: r.num }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.tocT1, children: r.titulo }),
-          tocPageNumbers ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.View, { style: s.leader }) : null,
-          tocPageNumbers ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.tocPage1, children: `${r.page}` }) : null
-        ] }, i) : /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_renderer4.View, { style: s.tocRow2, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.tocNum2, children: r.num }),
-          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.tocT2, children: r.titulo }),
-          tocPageNumbers ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.View, { style: s.leader }) : null,
-          tocPageNumbers ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_renderer4.Text, { style: s.tocPage2, children: `${r.page}` }) : null
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.tocKicker, children: "Contenido" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.tocTitle, children: "\xCDndice" }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.View, { style: { marginTop: 10 }, children: toc.map(
+        (r, i) => r.nivel === 1 ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.View, { style: s.tocRow1, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.tocNum1, children: r.num }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.tocT1, children: r.titulo }),
+          tocPageNumbers ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.View, { style: s.leader }) : null,
+          tocPageNumbers ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.tocPage1, children: `${r.page}` }) : null
+        ] }, i) : /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.View, { style: s.tocRow2, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.tocNum2, children: r.num }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.tocT2, children: r.titulo }),
+          tocPageNumbers ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.View, { style: s.leader }) : null,
+          tocPageNumbers ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.tocPage2, children: `${r.page}` }) : null
         ] }, i)
       ) }),
-      data.secciones.map((sec, i) => /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_renderer4.View, { break: true, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(SeccionHead, { s, theme, num: `${i + 1}`, titulo: sec.titulo }),
-        sec.sub.map((ss, j) => /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Subseccion, { s, num: `${i + 1}.${j + 1}`, ss }, j))
+      data.secciones.map((sec, i) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.View, { break: true, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(SeccionHead, { s, theme, num: `${i + 1}`, titulo: sec.titulo }),
+        sec.sub.map((ss, j) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Subseccion, { s, num: `${i + 1}.${j + 1}`, ss }, j))
       ] }, i))
     ] })
   ] });
 }
 
 // src/ReporteSimpleDocument.tsx
-var import_renderer5 = require("@react-pdf/renderer");
-var import_jsx_runtime5 = require("react/jsx-runtime");
+var import_renderer6 = require("@react-pdf/renderer");
+var import_jsx_runtime6 = require("react/jsx-runtime");
 function ReporteSimpleDocument({
   data,
   theme,
@@ -635,39 +777,39 @@ function ReporteSimpleDocument({
     { label: "Responsable", value: meta.responsable },
     { label: "Revisado por", value: meta.revisado }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.Document, { children: [
-    conPortada ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(CoverPage, { s, theme, meta, logo }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.Page, { size: "A4", style: s.pageSimple, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.View, { style: s.footerSimple, fixed: true, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.footerT, children: `${meta.codigo}  \xB7  Terralink O&M` }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-          import_renderer5.Text,
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer6.Document, { children: [
+    conPortada ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(CoverPage, { s, theme, meta, logo }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer6.Page, { size: "A4", style: s.pageSimple, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer6.View, { style: s.footerSimple, fixed: true, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer6.Text, { style: s.footerT, children: `${meta.codigo}  \xB7  Terralink O&M` }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+          import_renderer6.Text,
           {
             style: s.footerT,
             render: ({ pageNumber, totalPages }) => `P\xE1gina ${pageNumber} / ${totalPages}`
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.View, { style: s.sHead, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Image, { style: s.sHeadLogo, src: logo }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.View, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.sHeadTag, children: "Informe de Mantenimiento" }),
-          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.sHeadTag2, children: "Operaci\xF3n y Mantenimiento" })
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer6.View, { style: s.sHead, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer6.Image, { style: s.sHeadLogo, src: logo }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer6.View, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer6.Text, { style: s.sHeadTag, children: "Informe de Mantenimiento" }),
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer6.Text, { style: s.sHeadTag2, children: "Operaci\xF3n y Mantenimiento" })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.sKicker, children: meta.eyebrow }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.sTitle, children: meta.titulo }),
-      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Datos, { s, theme, items: datos }),
-      data.secciones.map((sec, i) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.View, { style: { marginTop: i === 0 ? 0 : 6 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(SeccionHead, { s, theme, num: `${i + 1}`, titulo: sec.titulo }),
-        sec.sub.map((ss, j) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Subseccion, { s, num: `${i + 1}.${j + 1}`, ss }, j))
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer6.Text, { style: s.sKicker, children: meta.eyebrow }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer6.Text, { style: s.sTitle, children: meta.titulo }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Datos, { s, theme, items: datos }),
+      data.secciones.map((sec, i) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer6.View, { style: { marginTop: i === 0 ? 0 : 6 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(SeccionHead, { s, theme, num: `${i + 1}`, titulo: sec.titulo }),
+        sec.sub.map((ss, j) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Subseccion, { s, num: `${i + 1}.${j + 1}`, ss }, j))
       ] }, i))
     ] })
   ] });
 }
 
 // src/fonts.ts
-var import_renderer6 = require("@react-pdf/renderer");
+var import_renderer7 = require("@react-pdf/renderer");
 var import_node_path = __toESM(require("path"));
 var registered = false;
 function defaultFontsDir() {
@@ -676,14 +818,14 @@ function defaultFontsDir() {
 function registerReportFonts(fontsDir = defaultFontsDir()) {
   if (registered) return;
   const F = (f) => import_node_path.default.join(fontsDir, f);
-  import_renderer6.Font.register({
+  import_renderer7.Font.register({
     family: "PTSerif",
     fonts: [
       { src: F("PTSerif-Regular.ttf"), fontWeight: 400 },
       { src: F("PTSerif-Bold.ttf"), fontWeight: 700 }
     ]
   });
-  import_renderer6.Font.register({
+  import_renderer7.Font.register({
     family: "Lato",
     fonts: [
       { src: F("Lato-Light.ttf"), fontWeight: 300 },
@@ -692,7 +834,7 @@ function registerReportFonts(fontsDir = defaultFontsDir()) {
       { src: F("Lato-Black.ttf"), fontWeight: 900 }
     ]
   });
-  import_renderer6.Font.register({
+  import_renderer7.Font.register({
     family: "SpaceGrotesk",
     fonts: [
       { src: F("SpaceGrotesk-300.woff"), fontWeight: 300 },
@@ -701,7 +843,7 @@ function registerReportFonts(fontsDir = defaultFontsDir()) {
       { src: F("SpaceGrotesk-700.woff"), fontWeight: 700 }
     ]
   });
-  import_renderer6.Font.register({
+  import_renderer7.Font.register({
     family: "IBMPlexSerif",
     fonts: [
       { src: F("IBMPlexSerif-Light.ttf"), fontWeight: 300 },
@@ -710,7 +852,7 @@ function registerReportFonts(fontsDir = defaultFontsDir()) {
       { src: F("IBMPlexSerif-Bold.ttf"), fontWeight: 700 }
     ]
   });
-  import_renderer6.Font.register({
+  import_renderer7.Font.register({
     family: "Poppins",
     fonts: [
       { src: F("Poppins-Light.ttf"), fontWeight: 300 },
@@ -720,7 +862,7 @@ function registerReportFonts(fontsDir = defaultFontsDir()) {
       { src: F("Poppins-Bold.ttf"), fontWeight: 700 }
     ]
   });
-  import_renderer6.Font.register({
+  import_renderer7.Font.register({
     family: "BarlowSC",
     fonts: [
       { src: F("BarlowSC-Regular.ttf"), fontWeight: 400 },
@@ -729,14 +871,14 @@ function registerReportFonts(fontsDir = defaultFontsDir()) {
       { src: F("BarlowSC-Bold.ttf"), fontWeight: 700 }
     ]
   });
-  import_renderer6.Font.register({
+  import_renderer7.Font.register({
     family: "SpaceMono",
     fonts: [
       { src: F("SpaceMono-Regular.ttf"), fontWeight: 400 },
       { src: F("SpaceMono-Bold.ttf"), fontWeight: 700 }
     ]
   });
-  import_renderer6.Font.register({
+  import_renderer7.Font.register({
     family: "DMSans",
     fonts: [
       { src: F("DMSans-400.woff"), fontWeight: 400 },
@@ -744,14 +886,14 @@ function registerReportFonts(fontsDir = defaultFontsDir()) {
       { src: F("DMSans-700.woff"), fontWeight: 700 }
     ]
   });
-  import_renderer6.Font.register({
+  import_renderer7.Font.register({
     family: "JetBrainsMono",
     fonts: [
       { src: F("JetBrainsMono-400.woff"), fontWeight: 400 },
       { src: F("JetBrainsMono-700.woff"), fontWeight: 700 }
     ]
   });
-  import_renderer6.Font.registerHyphenationCallback((w) => [w]);
+  import_renderer7.Font.registerHyphenationCallback((w) => [w]);
   registered = true;
 }
 
@@ -799,8 +941,10 @@ function placeholderPhoto(top, bottom, w = 800, h = 520) {
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  Barras,
   CoverPage,
   Datos,
+  Donut,
   Fotos,
   NetworkPattern,
   REPORT_THEMES,
@@ -819,6 +963,7 @@ function placeholderPhoto(top, bottom, w = 800, h = 520) {
   THEME_ROMBOS_TESORERIA,
   THEME_TECNICO,
   THEME_TESORERIA,
+  Tabla,
   makeStyles,
   placeholderPhoto,
   registerReportFonts
