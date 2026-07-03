@@ -184,7 +184,7 @@ var REPORT_THEMES = {
 };
 
 // src/kit.tsx
-import { Text as Text2, View as View2, Image } from "@react-pdf/renderer";
+import { Text as Text2, View as View2, Image, Link } from "@react-pdf/renderer";
 
 // src/charts.tsx
 import { Svg, Path, Rect, Line, Text, View } from "@react-pdf/renderer";
@@ -419,6 +419,9 @@ function makeStyles(t) {
     li: { flexDirection: "row", marginBottom: 5 },
     liDot: { fontFamily: t.body, fontSize: 10, color: detailColor, width: 14 },
     liTxt: { fontFamily: t.body, fontSize: 10, color: t.bodyColor, lineHeight: 1.5, flex: 1 },
+    enlaceItem: { marginBottom: 7 },
+    enlaceLabel: { fontFamily: t.body, fontSize: 10, color: t.bodyColor, lineHeight: 1.4, marginBottom: 1 },
+    enlace: { fontFamily: t.sans, fontSize: 9.5, color: t.accent, textDecoration: "underline" },
     // ---- KPIs ----
     kpis: { flexDirection: "row", borderTopWidth: 0.75, borderTopColor: t.line, borderBottomWidth: 0.75, borderBottomColor: t.line, paddingVertical: 11, marginBottom: 12, marginTop: 2 },
     kpi: { flex: 1, paddingRight: 10 },
@@ -509,6 +512,10 @@ function Subseccion({ s, num, ss }) {
     ss.lista && ss.lista.length > 0 ? /* @__PURE__ */ jsx2(View2, { style: { marginBottom: 6 }, children: ss.lista.map((it, i) => /* @__PURE__ */ jsxs2(View2, { style: s.li, children: [
       /* @__PURE__ */ jsx2(Text2, { style: s.liDot, children: "\u2014" }),
       /* @__PURE__ */ jsx2(Text2, { style: s.liTxt, children: it })
+    ] }, i)) }) : null,
+    ss.enlaces && ss.enlaces.length > 0 ? /* @__PURE__ */ jsx2(View2, { style: { marginBottom: 6 }, children: ss.enlaces.map((e, i) => /* @__PURE__ */ jsxs2(View2, { style: s.enlaceItem, children: [
+      e.label ? /* @__PURE__ */ jsx2(Text2, { style: s.enlaceLabel, children: e.label }) : null,
+      /* @__PURE__ */ jsx2(Link, { src: e.url, style: s.enlace, children: e.texto })
     ] }, i)) }) : null,
     ss.fotos && ss.fotos.length > 0 ? /* @__PURE__ */ jsx2(Fotos, { s, fotos: ss.fotos }) : null
   ] });

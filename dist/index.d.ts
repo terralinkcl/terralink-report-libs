@@ -38,10 +38,16 @@ interface ReporteTabla {
     resaltarUltima?: boolean;
     alinearDerechaDesde?: number;
 }
+interface ReporteEnlace {
+    label?: string;
+    texto: string;
+    url: string;
+}
 interface ReporteSubseccion {
     titulo: string;
     parrafos?: string[];
     lista?: string[];
+    enlaces?: ReporteEnlace[];
     kpis?: ReporteKpi[];
     fotos?: ReportePhoto[];
     donut?: ReporteDonut;
@@ -189,4 +195,4 @@ declare function registerReportFonts(fontsDir?: string): void;
 
 declare function placeholderPhoto(top: [number, number, number], bottom: [number, number, number], w?: number, h?: number): string;
 
-export { type AccentLevel, Barras, CoverPage, type DatoItem, Datos, type DatosVariant, Donut, Fotos, type H1Variant, NetworkPattern, type NetworkPatternProps, REPORT_THEMES, type ReportTheme, type ReportThemeKey, type ReporteBarra, type ReporteBarraGrupo, type ReporteBarras, type ReporteData, ReporteDocument, type ReporteDonut, type ReporteDonutSegmento, type ReporteKpi, type ReporteMeta, type ReportePhoto, type ReporteSeccion, ReporteSimpleDocument, type ReporteSubseccion, type ReporteTabla, SeccionHead, type Styles, Subseccion, THEME_CORPORATE, THEME_EDITORIAL, THEME_ED_MINIMO, THEME_ED_SUAVE, THEME_ED_TINTA, THEME_PROPUESTA, THEME_ROMBOS_EDITORIAL, THEME_ROMBOS_PROPUESTA, THEME_ROMBOS_TESORERIA, THEME_TECNICO, THEME_TESORERIA, Tabla, makeStyles, placeholderPhoto, registerReportFonts };
+export { type AccentLevel, Barras, CoverPage, type DatoItem, Datos, type DatosVariant, Donut, Fotos, type H1Variant, NetworkPattern, type NetworkPatternProps, REPORT_THEMES, type ReportTheme, type ReportThemeKey, type ReporteBarra, type ReporteBarraGrupo, type ReporteBarras, type ReporteData, ReporteDocument, type ReporteDonut, type ReporteDonutSegmento, type ReporteEnlace, type ReporteKpi, type ReporteMeta, type ReportePhoto, type ReporteSeccion, ReporteSimpleDocument, type ReporteSubseccion, type ReporteTabla, SeccionHead, type Styles, Subseccion, THEME_CORPORATE, THEME_EDITORIAL, THEME_ED_MINIMO, THEME_ED_SUAVE, THEME_ED_TINTA, THEME_PROPUESTA, THEME_ROMBOS_EDITORIAL, THEME_ROMBOS_PROPUESTA, THEME_ROMBOS_TESORERIA, THEME_TECNICO, THEME_TESORERIA, Tabla, makeStyles, placeholderPhoto, registerReportFonts };

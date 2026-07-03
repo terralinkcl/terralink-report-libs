@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, View, Image } from "@react-pdf/renderer";
+import { Text, View, Image, Link } from "@react-pdf/renderer";
 import type { ReporteSubseccion, ReportePhoto } from "./types";
 import type { ReportTheme } from "./themes";
 import { Donut, Barras, Tabla } from "./charts";
@@ -139,6 +139,9 @@ export function makeStyles(t: ReportTheme): Styles {
     li: { flexDirection: "row", marginBottom: 5 },
     liDot: { fontFamily: t.body, fontSize: 10, color: detailColor, width: 14 },
     liTxt: { fontFamily: t.body, fontSize: 10, color: t.bodyColor, lineHeight: 1.5, flex: 1 },
+    enlaceItem: { marginBottom: 7 },
+    enlaceLabel: { fontFamily: t.body, fontSize: 10, color: t.bodyColor, lineHeight: 1.4, marginBottom: 1 },
+    enlace: { fontFamily: t.sans, fontSize: 9.5, color: t.accent, textDecoration: "underline" },
 
     // ---- KPIs ----
     kpis: { flexDirection: "row", borderTopWidth: 0.75, borderTopColor: t.line, borderBottomWidth: 0.75, borderBottomColor: t.line, paddingVertical: 11, marginBottom: 12, marginTop: 2 },
@@ -288,6 +291,18 @@ export function Subseccion({ s, num, ss }: { s: Styles; num: string; ss: Reporte
             <View key={i} style={s.li}>
               <Text style={s.liDot}>{"—"}</Text>
               <Text style={s.liTxt}>{it}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      {ss.enlaces && ss.enlaces.length > 0 ? (
+        <View style={{ marginBottom: 6 }}>
+          {ss.enlaces.map((e, i) => (
+            <View key={i} style={s.enlaceItem}>
+              {e.label ? <Text style={s.enlaceLabel}>{e.label}</Text> : null}
+              <Link src={e.url} style={s.enlace}>
+                {e.texto}
+              </Link>
             </View>
           ))}
         </View>

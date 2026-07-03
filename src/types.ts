@@ -48,10 +48,20 @@ export interface ReporteTabla {
   alinearDerechaDesde?: number; // indice de columna desde el cual se alinea a la derecha (default 1)
 }
 
+// Enlace clickeable dentro de una subseccion (ej. "Ver video" en informes con
+// material audiovisual). `label` es el texto previo no clickeable (opcional);
+// `texto` es el hipervinculo visible y `url` el destino.
+export interface ReporteEnlace {
+  label?: string;
+  texto: string;
+  url: string;
+}
+
 export interface ReporteSubseccion {
   titulo: string;
   parrafos?: string[];
   lista?: string[];
+  enlaces?: ReporteEnlace[];
   kpis?: ReporteKpi[];
   fotos?: ReportePhoto[];
   donut?: ReporteDonut;
