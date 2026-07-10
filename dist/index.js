@@ -493,6 +493,7 @@ function makeStyles(t) {
     // sobrante (letterbox) de forma prolija.
     fotos: { marginTop: 6, marginBottom: 4 },
     fotoFila: { flexDirection: "row", marginBottom: 10 },
+    fotoFilaFirst: { flexDirection: "row", marginTop: 6, marginBottom: 10 },
     // Caja base (tamano normal): 2 por fila.
     fbox: {
       width: "48%",
@@ -553,7 +554,7 @@ function Fotos({ s, fotos }) {
   }
   flush();
   const fotoStyle = (tipo) => tipo === "grande" ? s.fotoGrande : tipo === "xl" ? s.fotoXl : s.foto;
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: s.fotos, children: filas.map((fila, r) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: s.fotoFila, wrap: false, children: fila.fotos.map((f, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: fila.tipo === "normal" ? s.fbox : s.fboxFull, children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_jsx_runtime2.Fragment, { children: filas.map((fila, r) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: r === 0 ? s.fotoFilaFirst : s.fotoFila, wrap: false, children: fila.fotos.map((f, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: fila.tipo === "normal" ? s.fbox : s.fboxFull, children: [
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Image, { style: fotoStyle(fila.tipo), src: f.url }),
     f.caption ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.cap, children: f.caption }) : null
   ] }, i)) }, r)) });
@@ -752,6 +753,7 @@ function CoverPage({
 }
 
 // src/ReporteDocument.tsx
+var import_react = __toESM(require("react"));
 var import_renderer5 = require("@react-pdf/renderer");
 var import_jsx_runtime5 = require("react/jsx-runtime");
 function buildToc(data) {
@@ -807,8 +809,8 @@ function ReporteDocument({
           tocPageNumbers ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.Text, { style: s.tocPage2, children: `${r.page}` }) : null
         ] }, i)
       ) }),
-      data.secciones.map((sec, i) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.View, { break: true, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(SeccionHead, { s, theme, num: `${i + 1}`, titulo: sec.titulo }),
+      data.secciones.map((sec, i) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_react.default.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.View, { break: true, children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(SeccionHead, { s, theme, num: `${i + 1}`, titulo: sec.titulo }) }),
         sec.sub.map((ss, j) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Subseccion, { s, num: `${i + 1}.${j + 1}`, ss }, j))
       ] }, i))
     ] })

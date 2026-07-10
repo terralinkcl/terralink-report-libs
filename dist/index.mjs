@@ -307,7 +307,7 @@ function Tabla({ s, tabla }) {
 }
 
 // src/kit.tsx
-import { jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
+import { Fragment, jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
 function makeStyles(t) {
   const sansLabel = {
     fontFamily: t.sans,
@@ -439,6 +439,7 @@ function makeStyles(t) {
     // sobrante (letterbox) de forma prolija.
     fotos: { marginTop: 6, marginBottom: 4 },
     fotoFila: { flexDirection: "row", marginBottom: 10 },
+    fotoFilaFirst: { flexDirection: "row", marginTop: 6, marginBottom: 10 },
     // Caja base (tamano normal): 2 por fila.
     fbox: {
       width: "48%",
@@ -499,7 +500,7 @@ function Fotos({ s, fotos }) {
   }
   flush();
   const fotoStyle = (tipo) => tipo === "grande" ? s.fotoGrande : tipo === "xl" ? s.fotoXl : s.foto;
-  return /* @__PURE__ */ jsx2(View2, { style: s.fotos, children: filas.map((fila, r) => /* @__PURE__ */ jsx2(View2, { style: s.fotoFila, wrap: false, children: fila.fotos.map((f, i) => /* @__PURE__ */ jsxs2(View2, { style: fila.tipo === "normal" ? s.fbox : s.fboxFull, children: [
+  return /* @__PURE__ */ jsx2(Fragment, { children: filas.map((fila, r) => /* @__PURE__ */ jsx2(View2, { style: r === 0 ? s.fotoFilaFirst : s.fotoFila, wrap: false, children: fila.fotos.map((f, i) => /* @__PURE__ */ jsxs2(View2, { style: fila.tipo === "normal" ? s.fbox : s.fboxFull, children: [
     /* @__PURE__ */ jsx2(Image, { style: fotoStyle(fila.tipo), src: f.url }),
     f.caption ? /* @__PURE__ */ jsx2(Text2, { style: s.cap, children: f.caption }) : null
   ] }, i)) }, r)) });
@@ -698,6 +699,7 @@ function CoverPage({
 }
 
 // src/ReporteDocument.tsx
+import React from "react";
 import { Document, Page as Page2, Text as Text4, View as View4 } from "@react-pdf/renderer";
 import { jsx as jsx5, jsxs as jsxs5 } from "react/jsx-runtime";
 function buildToc(data) {
@@ -753,8 +755,8 @@ function ReporteDocument({
           tocPageNumbers ? /* @__PURE__ */ jsx5(Text4, { style: s.tocPage2, children: `${r.page}` }) : null
         ] }, i)
       ) }),
-      data.secciones.map((sec, i) => /* @__PURE__ */ jsxs5(View4, { break: true, children: [
-        /* @__PURE__ */ jsx5(SeccionHead, { s, theme, num: `${i + 1}`, titulo: sec.titulo }),
+      data.secciones.map((sec, i) => /* @__PURE__ */ jsxs5(React.Fragment, { children: [
+        /* @__PURE__ */ jsx5(View4, { break: true, children: /* @__PURE__ */ jsx5(SeccionHead, { s, theme, num: `${i + 1}`, titulo: sec.titulo }) }),
         sec.sub.map((ss, j) => /* @__PURE__ */ jsx5(Subseccion, { s, num: `${i + 1}.${j + 1}`, ss }, j))
       ] }, i))
     ] })

@@ -92,14 +92,20 @@ export function ReporteDocument({
           )}
         </View>
 
-        {/* Secciones */}
+        {/* Secciones. El titulo (SeccionHead) va en su propio View con `break`
+            (inicia pagina nueva); las subsecciones son HERMANOS directos del flujo
+            de pagina, no hijos de un View que los envuelva. Asi react-pdf puede
+            quebrar el contenido entre paginas con total libertad, sin mover el
+            bloque entero y dejar el titulo solo en una pagina casi vacia. */}
         {data.secciones.map((sec, i) => (
-          <View key={i} break>
-            <SeccionHead s={s} theme={theme} num={`${i + 1}`} titulo={sec.titulo} />
+          <React.Fragment key={i}>
+            <View break>
+              <SeccionHead s={s} theme={theme} num={`${i + 1}`} titulo={sec.titulo} />
+            </View>
             {sec.sub.map((ss, j) => (
               <Subseccion key={j} s={s} num={`${i + 1}.${j + 1}`} ss={ss} />
             ))}
-          </View>
+          </React.Fragment>
         ))}
       </Page>
     </Document>

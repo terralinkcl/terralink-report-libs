@@ -161,6 +161,7 @@ export function makeStyles(t: ReportTheme): Styles {
     // sobrante (letterbox) de forma prolija.
     fotos: { marginTop: 6, marginBottom: 4 },
     fotoFila: { flexDirection: "row", marginBottom: 10 },
+    fotoFilaFirst: { flexDirection: "row", marginTop: 6, marginBottom: 10 },
     // Caja base (tamano normal): 2 por fila.
     fbox: {
       width: "48%",
@@ -233,10 +234,15 @@ export function Fotos({ s, fotos }: { s: Styles; fotos: ReportePhoto[] }) {
   const fotoStyle = (tipo: Fila["tipo"]) =>
     tipo === "grande" ? s.fotoGrande : tipo === "xl" ? s.fotoXl : s.foto;
 
+  // Se devuelven las FILAS como hermanos directos (Fragment), sin un View que las
+  // envuelva. Ese contenedor impedia que react-pdf quebrara el bloque de fotos
+  // entre paginas: al no caber entero lo movia completo y dejaba el titulo de
+  // seccion solo en una pagina casi vacia. Sin el contenedor, cada fila
+  // (wrap={false}) fluye y quiebra por si misma.
   return (
-    <View style={s.fotos}>
+    <>
       {filas.map((fila, r) => (
-        <View key={r} style={s.fotoFila} wrap={false}>
+        <View key={r} style={r === 0 ? s.fotoFilaFirst : s.fotoFila} wrap={false}>
           {fila.fotos.map((f, i) => (
             <View key={i} style={fila.tipo === "normal" ? s.fbox : s.fboxFull}>
               {/* eslint-disable-next-line jsx-a11y/alt-text */}
@@ -246,7 +252,7 @@ export function Fotos({ s, fotos }: { s: Styles; fotos: ReportePhoto[] }) {
           ))}
         </View>
       ))}
-    </View>
+    </>
   );
 }
 
