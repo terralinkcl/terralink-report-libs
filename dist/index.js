@@ -482,10 +482,24 @@ function makeStyles(t) {
     kpiV: { fontFamily: t.mono || t.display, fontWeight: 700, fontSize: t.mono ? 15 : 17, color: t.ink },
     kpiK: { ...sansLabel, fontSize: 6.5, color: t.muted, marginTop: 3 },
     // ---- Fotos ----
+    // La caja tiene tamano fijo pero la imagen usa objectFit "contain" para
+    // mostrarse COMPLETA sin recortar, respetando su orientacion (las verticales
+    // ya no se recortan a formato horizontal). El fondo suave rellena el espacio
+    // sobrante (letterbox) de forma prolija.
     fotos: { flexDirection: "row", flexWrap: "wrap", marginTop: 6, marginBottom: 4 },
-    fbox: { width: "48%", marginRight: "2%", marginBottom: 10 },
-    foto: { width: "100%", height: 132, objectFit: "cover", borderRadius: 2 },
-    cap: { fontFamily: t.sans, fontSize: 7.5, color: t.muted, marginTop: 4 },
+    fbox: {
+      width: "48%",
+      marginRight: "2%",
+      marginBottom: 10,
+      backgroundColor: t.panel,
+      borderWidth: 1,
+      borderColor: t.line,
+      borderRadius: 4,
+      padding: 4,
+      alignItems: "center"
+    },
+    foto: { width: "100%", height: 160, objectFit: "contain", borderRadius: 2 },
+    cap: { fontFamily: t.sans, fontSize: 7.5, color: t.muted, marginTop: 4, textAlign: "center" },
     // ---- Graficos / tabla ----
     chartRow: { flexDirection: "row", alignItems: "center", marginVertical: 8 },
     donutCentroT: { fontFamily: t.sans, fontSize: 7, color: t.muted, textAlign: "center" },
