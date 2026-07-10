@@ -3,6 +3,7 @@ import * as react_jsx_runtime from 'react/jsx-runtime';
 interface ReportePhoto {
     url: string;
     caption?: string | null;
+    size?: "normal" | "grande" | "xl";
 }
 interface ReporteKpi {
     k: string;

@@ -150,15 +150,31 @@ export function makeStyles(t: ReportTheme): Styles {
     kpiK: { ...sansLabel, fontSize: 6.5, color: t.muted, marginTop: 3 },
 
     // ---- Fotos ----
+    // Las fotos se agrupan en filas de 2 (ver componente Fotos). Cada fila lleva
+    // wrap={false} para no partir una foto, pero el contenedor SI puede cortar
+    // entre filas: asi un bloque grande de fotos fluye a la pagina siguiente en
+    // vez de saltar entero y dejar el titulo de seccion huerfano en una pagina
+    // casi en blanco.
     // La caja tiene tamano fijo pero la imagen usa objectFit "contain" para
     // mostrarse COMPLETA sin recortar, respetando su orientacion (las verticales
     // ya no se recortan a formato horizontal). El fondo suave rellena el espacio
     // sobrante (letterbox) de forma prolija.
-    fotos: { flexDirection: "row", flexWrap: "wrap", marginTop: 6, marginBottom: 4 },
+    fotos: { marginTop: 6, marginBottom: 4 },
+    fotoFila: { flexDirection: "row", marginBottom: 10 },
+    // Caja base (tamano normal): 2 por fila.
     fbox: {
       width: "48%",
       marginRight: "2%",
-      marginBottom: 10,
+      backgroundColor: t.panel,
+      borderWidth: 1,
+      borderColor: t.line,
+      borderRadius: 4,
+      padding: 4,
+      alignItems: "center",
+    },
+    // Caja para fotos con enfasis: 1 por fila, a todo el ancho.
+    fboxFull: {
+      width: "100%",
       backgroundColor: t.panel,
       borderWidth: 1,
       borderColor: t.line,
@@ -167,6 +183,8 @@ export function makeStyles(t: ReportTheme): Styles {
       alignItems: "center",
     },
     foto: { width: "100%", height: 160, objectFit: "contain", borderRadius: 2 },
+    fotoGrande: { width: "100%", height: 300, objectFit: "contain", borderRadius: 2 },
+    fotoXl: { width: "100%", height: 460, objectFit: "contain", borderRadius: 2 },
     cap: { fontFamily: t.sans, fontSize: 7.5, color: t.muted, marginTop: 4, textAlign: "center" },
 
     // ---- Graficos / tabla ----
@@ -187,13 +205,45 @@ export function makeStyles(t: ReportTheme): Styles {
 }
 
 export function Fotos({ s, fotos }: { s: Styles; fotos: ReportePhoto[] }) {
+  // Se arma por filas respetando el tamano de cada foto:
+  //   - "normal": 2 por fila (caja al 48%).
+  //   - "grande"/"xl": 1 por fila, a todo el ancho, con mayor altura (enfasis).
+  // Cada fila es indivisible (wrap={false}) para no cortar una foto, pero el
+  // contenedor puede quebrar ENTRE filas: asi un bloque grande de fotos fluye a
+  // la pagina siguiente sin dejar el titulo de seccion solo en una pagina vacia.
+  type Fila = { tipo: "normal" | "grande" | "xl"; fotos: ReportePhoto[] };
+  const filas: Fila[] = [];
+  let buffer: ReportePhoto[] = [];
+  const flush = () => {
+    if (buffer.length) filas.push({ tipo: "normal", fotos: buffer });
+    buffer = [];
+  };
+  for (const f of fotos) {
+    const size = f.size ?? "normal";
+    if (size === "normal") {
+      buffer.push(f);
+      if (buffer.length === 2) flush();
+    } else {
+      flush();
+      filas.push({ tipo: size, fotos: [f] });
+    }
+  }
+  flush();
+
+  const fotoStyle = (tipo: Fila["tipo"]) =>
+    tipo === "grande" ? s.fotoGrande : tipo === "xl" ? s.fotoXl : s.foto;
+
   return (
     <View style={s.fotos}>
-      {fotos.map((f, i) => (
-        <View key={i} style={s.fbox} wrap={false}>
-          {/* eslint-disable-next-line jsx-a11y/alt-text */}
-          <Image style={s.foto} src={f.url} />
-          {f.caption ? <Text style={s.cap}>{f.caption}</Text> : null}
+      {filas.map((fila, r) => (
+        <View key={r} style={s.fotoFila} wrap={false}>
+          {fila.fotos.map((f, i) => (
+            <View key={i} style={fila.tipo === "normal" ? s.fbox : s.fboxFull}>
+              {/* eslint-disable-next-line jsx-a11y/alt-text */}
+              <Image style={fotoStyle(fila.tipo)} src={f.url} />
+              {f.caption ? <Text style={s.cap}>{f.caption}</Text> : null}
+            </View>
+          ))}
         </View>
       ))}
     </View>

@@ -482,15 +482,31 @@ function makeStyles(t) {
     kpiV: { fontFamily: t.mono || t.display, fontWeight: 700, fontSize: t.mono ? 15 : 17, color: t.ink },
     kpiK: { ...sansLabel, fontSize: 6.5, color: t.muted, marginTop: 3 },
     // ---- Fotos ----
+    // Las fotos se agrupan en filas de 2 (ver componente Fotos). Cada fila lleva
+    // wrap={false} para no partir una foto, pero el contenedor SI puede cortar
+    // entre filas: asi un bloque grande de fotos fluye a la pagina siguiente en
+    // vez de saltar entero y dejar el titulo de seccion huerfano en una pagina
+    // casi en blanco.
     // La caja tiene tamano fijo pero la imagen usa objectFit "contain" para
     // mostrarse COMPLETA sin recortar, respetando su orientacion (las verticales
     // ya no se recortan a formato horizontal). El fondo suave rellena el espacio
     // sobrante (letterbox) de forma prolija.
-    fotos: { flexDirection: "row", flexWrap: "wrap", marginTop: 6, marginBottom: 4 },
+    fotos: { marginTop: 6, marginBottom: 4 },
+    fotoFila: { flexDirection: "row", marginBottom: 10 },
+    // Caja base (tamano normal): 2 por fila.
     fbox: {
       width: "48%",
       marginRight: "2%",
-      marginBottom: 10,
+      backgroundColor: t.panel,
+      borderWidth: 1,
+      borderColor: t.line,
+      borderRadius: 4,
+      padding: 4,
+      alignItems: "center"
+    },
+    // Caja para fotos con enfasis: 1 por fila, a todo el ancho.
+    fboxFull: {
+      width: "100%",
       backgroundColor: t.panel,
       borderWidth: 1,
       borderColor: t.line,
@@ -499,6 +515,8 @@ function makeStyles(t) {
       alignItems: "center"
     },
     foto: { width: "100%", height: 160, objectFit: "contain", borderRadius: 2 },
+    fotoGrande: { width: "100%", height: 300, objectFit: "contain", borderRadius: 2 },
+    fotoXl: { width: "100%", height: 460, objectFit: "contain", borderRadius: 2 },
     cap: { fontFamily: t.sans, fontSize: 7.5, color: t.muted, marginTop: 4, textAlign: "center" },
     // ---- Graficos / tabla ----
     chartRow: { flexDirection: "row", alignItems: "center", marginVertical: 8 },
@@ -517,10 +535,28 @@ function makeStyles(t) {
   };
 }
 function Fotos({ s, fotos }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: s.fotos, children: fotos.map((f, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.fbox, wrap: false, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Image, { style: s.foto, src: f.url }),
+  const filas = [];
+  let buffer = [];
+  const flush = () => {
+    if (buffer.length) filas.push({ tipo: "normal", fotos: buffer });
+    buffer = [];
+  };
+  for (const f of fotos) {
+    const size = f.size ?? "normal";
+    if (size === "normal") {
+      buffer.push(f);
+      if (buffer.length === 2) flush();
+    } else {
+      flush();
+      filas.push({ tipo: size, fotos: [f] });
+    }
+  }
+  flush();
+  const fotoStyle = (tipo) => tipo === "grande" ? s.fotoGrande : tipo === "xl" ? s.fotoXl : s.foto;
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: s.fotos, children: filas.map((fila, r) => /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: s.fotoFila, wrap: false, children: fila.fotos.map((f, i) => /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: fila.tipo === "normal" ? s.fbox : s.fboxFull, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Image, { style: fotoStyle(fila.tipo), src: f.url }),
     f.caption ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.cap, children: f.caption }) : null
-  ] }, i)) });
+  ] }, i)) }, r)) });
 }
 function Datos({ s, theme, items }) {
   if (theme.datosVariant === "tarjetas") {

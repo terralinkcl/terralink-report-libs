@@ -3,6 +3,9 @@
 export interface ReportePhoto {
   url: string; // URL accesible o data URI
   caption?: string | null;
+  // Tamano de la foto en el informe. "normal" (default) = 2 por fila; "grande" =
+  // 1 por fila; "xl" = 1 por fila, casi a pagina completa. Para dar enfasis.
+  size?: "normal" | "grande" | "xl";
 }
 
 export interface ReporteKpi {
