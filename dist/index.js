@@ -36,6 +36,7 @@ __export(src_exports, {
   Donut: () => Donut,
   Fotos: () => Fotos,
   NetworkPattern: () => NetworkPattern,
+  PageMarker: () => PageMarker,
   REPORT_THEMES: () => REPORT_THEMES,
   ReporteDocument: () => ReporteDocument,
   ReporteSimpleDocument: () => ReporteSimpleDocument,
@@ -55,7 +56,8 @@ __export(src_exports, {
   Tabla: () => Tabla,
   makeStyles: () => makeStyles,
   placeholderPhoto: () => placeholderPhoto,
-  registerReportFonts: () => registerReportFonts
+  registerReportFonts: () => registerReportFonts,
+  renderReporteToBuffer: () => renderReporteToBuffer
 });
 module.exports = __toCommonJS(src_exports);
 
@@ -581,27 +583,56 @@ function Datos({ s, theme, items }) {
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.fichaVal, children: d.value })
   ] }, i)) });
 }
-function SeccionHead({ s, theme, num, titulo }) {
+function PageMarker({ id, onPageMarker }) {
+  if (!onPageMarker) return null;
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+    import_renderer2.Text,
+    {
+      style: { width: 0, height: 0, fontSize: 0 },
+      render: ({ pageNumber }) => {
+        onPageMarker(id, pageNumber);
+        return "";
+      }
+    }
+  );
+}
+function SeccionHead({
+  s,
+  theme,
+  num,
+  titulo,
+  onPageMarker
+}) {
+  const mk = /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(PageMarker, { id: num, onPageMarker });
   if (theme.h1Variant === "chip") {
     return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.h1Chip, children: [
+      mk,
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h1ChipBox, children: num }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h1ChipT, children: titulo })
     ] });
   }
   if (theme.h1Variant === "barra") {
     return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.h1Barra, children: [
+      mk,
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h1BarraN, children: `${num}.0` }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h1BarraT, children: titulo })
     ] });
   }
   return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.h1Numero, children: [
+    mk,
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h1NumeroN, children: num }),
     /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h1NumeroT, children: titulo })
   ] });
 }
-function Subseccion({ s, num, ss }) {
+function Subseccion({
+  s,
+  num,
+  ss,
+  onPageMarker
+}) {
   return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: { marginBottom: 12 }, children: [
-    ss.titulo ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.h2Wrap, children: [
+    ss.titulo ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_renderer2.View, { style: s.h2Wrap, wrap: false, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(PageMarker, { id: num, onPageMarker }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.View, { style: s.h2Tick }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h2Num, children: num }),
       /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_renderer2.Text, { style: s.h2, children: ss.titulo })
@@ -756,14 +787,15 @@ function CoverPage({
 var import_react = __toESM(require("react"));
 var import_renderer5 = require("@react-pdf/renderer");
 var import_jsx_runtime5 = require("react/jsx-runtime");
-function buildToc(data) {
+function buildToc(data, tocPages) {
   const rows = [];
+  const pg = (num) => tocPages && tocPages[num] != null ? `${tocPages[num]}` : "-";
   data.secciones.forEach((sec, i) => {
-    const page = 3 + i;
+    const page = pg(`${i + 1}`);
     rows.push({ nivel: 1, num: `${i + 1}`, titulo: sec.titulo, page });
     sec.sub.forEach((ss, j) => {
       if (!ss.titulo) return;
-      rows.push({ nivel: 2, num: `${i + 1}.${j + 1}`, titulo: ss.titulo, page });
+      rows.push({ nivel: 2, num: `${i + 1}.${j + 1}`, titulo: ss.titulo, page: pg(`${i + 1}.${j + 1}`) });
     });
   });
   return rows;
@@ -772,11 +804,13 @@ function ReporteDocument({
   data,
   theme,
   logo,
-  tocPageNumbers = true
+  tocPageNumbers = true,
+  tocPages,
+  onPageMarker
 }) {
   const s = makeStyles(theme);
   const { meta } = data;
-  const toc = buildToc(data);
+  const toc = buildToc(data, tocPages);
   return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.Document, { children: [
     /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(CoverPage, { s, theme, meta, logo }),
     /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_renderer5.Page, { size: "A4", style: s.page, children: [
@@ -810,15 +844,42 @@ function ReporteDocument({
         ] }, i)
       ) }),
       data.secciones.map((sec, i) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_react.default.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.View, { break: true, children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(SeccionHead, { s, theme, num: `${i + 1}`, titulo: sec.titulo }) }),
-        sec.sub.map((ss, j) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Subseccion, { s, num: `${i + 1}.${j + 1}`, ss }, j))
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_renderer5.View, { break: true, children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(SeccionHead, { s, theme, num: `${i + 1}`, titulo: sec.titulo, onPageMarker }) }),
+        sec.sub.map((ss, j) => /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(Subseccion, { s, num: `${i + 1}.${j + 1}`, ss, onPageMarker }, j))
       ] }, i))
     ] })
   ] });
 }
 
-// src/ReporteSimpleDocument.tsx
+// src/renderReporte.ts
+var import_react2 = __toESM(require("react"));
 var import_renderer6 = require("@react-pdf/renderer");
+var MAX_PASADAS = 4;
+function iguales(a, b) {
+  const ka = Object.keys(a);
+  return ka.length === Object.keys(b).length && ka.every((k) => a[k] === b[k]);
+}
+async function renderReporteToBuffer(props) {
+  let usadas = props.tocPages;
+  let buf;
+  for (let i = 0; i < MAX_PASADAS; i++) {
+    const medidas = {};
+    const onPageMarker = (num, page) => {
+      medidas[num] = page;
+      props.onPageMarker?.(num, page);
+    };
+    buf = await (0, import_renderer6.renderToBuffer)(
+      import_react2.default.createElement(ReporteDocument, { ...props, tocPages: usadas, onPageMarker })
+    );
+    if (props.tocPageNumbers === false) return buf;
+    if (usadas && iguales(usadas, medidas)) return buf;
+    usadas = medidas;
+  }
+  return buf;
+}
+
+// src/ReporteSimpleDocument.tsx
+var import_renderer7 = require("@react-pdf/renderer");
 var import_jsx_runtime6 = require("react/jsx-runtime");
 function ReporteSimpleDocument({
   data,
@@ -836,30 +897,30 @@ function ReporteSimpleDocument({
     { label: "Responsable", value: meta.responsable },
     { label: "Revisado por", value: meta.revisado }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer6.Document, { children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer7.Document, { children: [
     conPortada ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(CoverPage, { s, theme, meta, logo }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer6.Page, { size: "A4", style: s.pageSimple, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer6.View, { style: s.footerSimple, fixed: true, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer6.Text, { style: s.footerT, children: `${meta.codigo}  \xB7  Terralink O&M` }),
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer7.Page, { size: "A4", style: s.pageSimple, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer7.View, { style: s.footerSimple, fixed: true, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer7.Text, { style: s.footerT, children: `${meta.codigo}  \xB7  Terralink O&M` }),
         /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-          import_renderer6.Text,
+          import_renderer7.Text,
           {
             style: s.footerT,
             render: ({ pageNumber, totalPages }) => `P\xE1gina ${pageNumber} / ${totalPages}`
           }
         )
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer6.View, { style: s.sHead, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer6.Image, { style: s.sHeadLogo, src: logo }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer6.View, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer6.Text, { style: s.sHeadTag, children: "Informe de Mantenimiento" }),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer6.Text, { style: s.sHeadTag2, children: "Operaci\xF3n y Mantenimiento" })
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer7.View, { style: s.sHead, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer7.Image, { style: s.sHeadLogo, src: logo }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer7.View, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer7.Text, { style: s.sHeadTag, children: "Informe de Mantenimiento" }),
+          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer7.Text, { style: s.sHeadTag2, children: "Operaci\xF3n y Mantenimiento" })
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer6.Text, { style: s.sKicker, children: meta.eyebrow }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer6.Text, { style: s.sTitle, children: meta.titulo }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer7.Text, { style: s.sKicker, children: meta.eyebrow }),
+      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_renderer7.Text, { style: s.sTitle, children: meta.titulo }),
       /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Datos, { s, theme, items: datos }),
-      data.secciones.map((sec, i) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer6.View, { style: { marginTop: i === 0 ? 0 : 6 }, children: [
+      data.secciones.map((sec, i) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_renderer7.View, { style: { marginTop: i === 0 ? 0 : 6 }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(SeccionHead, { s, theme, num: `${i + 1}`, titulo: sec.titulo }),
         sec.sub.map((ss, j) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(Subseccion, { s, num: `${i + 1}.${j + 1}`, ss }, j))
       ] }, i))
@@ -868,7 +929,7 @@ function ReporteSimpleDocument({
 }
 
 // src/fonts.ts
-var import_renderer7 = require("@react-pdf/renderer");
+var import_renderer8 = require("@react-pdf/renderer");
 var import_node_path = __toESM(require("path"));
 var registered = false;
 function defaultFontsDir() {
@@ -877,14 +938,14 @@ function defaultFontsDir() {
 function registerReportFonts(fontsDir = defaultFontsDir()) {
   if (registered) return;
   const F = (f) => import_node_path.default.join(fontsDir, f);
-  import_renderer7.Font.register({
+  import_renderer8.Font.register({
     family: "PTSerif",
     fonts: [
       { src: F("PTSerif-Regular.ttf"), fontWeight: 400 },
       { src: F("PTSerif-Bold.ttf"), fontWeight: 700 }
     ]
   });
-  import_renderer7.Font.register({
+  import_renderer8.Font.register({
     family: "Lato",
     fonts: [
       { src: F("Lato-Light.ttf"), fontWeight: 300 },
@@ -893,7 +954,7 @@ function registerReportFonts(fontsDir = defaultFontsDir()) {
       { src: F("Lato-Black.ttf"), fontWeight: 900 }
     ]
   });
-  import_renderer7.Font.register({
+  import_renderer8.Font.register({
     family: "SpaceGrotesk",
     fonts: [
       { src: F("SpaceGrotesk-300.woff"), fontWeight: 300 },
@@ -902,7 +963,7 @@ function registerReportFonts(fontsDir = defaultFontsDir()) {
       { src: F("SpaceGrotesk-700.woff"), fontWeight: 700 }
     ]
   });
-  import_renderer7.Font.register({
+  import_renderer8.Font.register({
     family: "IBMPlexSerif",
     fonts: [
       { src: F("IBMPlexSerif-Light.ttf"), fontWeight: 300 },
@@ -911,7 +972,7 @@ function registerReportFonts(fontsDir = defaultFontsDir()) {
       { src: F("IBMPlexSerif-Bold.ttf"), fontWeight: 700 }
     ]
   });
-  import_renderer7.Font.register({
+  import_renderer8.Font.register({
     family: "Poppins",
     fonts: [
       { src: F("Poppins-Light.ttf"), fontWeight: 300 },
@@ -921,7 +982,7 @@ function registerReportFonts(fontsDir = defaultFontsDir()) {
       { src: F("Poppins-Bold.ttf"), fontWeight: 700 }
     ]
   });
-  import_renderer7.Font.register({
+  import_renderer8.Font.register({
     family: "BarlowSC",
     fonts: [
       { src: F("BarlowSC-Regular.ttf"), fontWeight: 400 },
@@ -930,14 +991,14 @@ function registerReportFonts(fontsDir = defaultFontsDir()) {
       { src: F("BarlowSC-Bold.ttf"), fontWeight: 700 }
     ]
   });
-  import_renderer7.Font.register({
+  import_renderer8.Font.register({
     family: "SpaceMono",
     fonts: [
       { src: F("SpaceMono-Regular.ttf"), fontWeight: 400 },
       { src: F("SpaceMono-Bold.ttf"), fontWeight: 700 }
     ]
   });
-  import_renderer7.Font.register({
+  import_renderer8.Font.register({
     family: "DMSans",
     fonts: [
       { src: F("DMSans-400.woff"), fontWeight: 400 },
@@ -945,14 +1006,14 @@ function registerReportFonts(fontsDir = defaultFontsDir()) {
       { src: F("DMSans-700.woff"), fontWeight: 700 }
     ]
   });
-  import_renderer7.Font.register({
+  import_renderer8.Font.register({
     family: "JetBrainsMono",
     fonts: [
       { src: F("JetBrainsMono-400.woff"), fontWeight: 400 },
       { src: F("JetBrainsMono-700.woff"), fontWeight: 700 }
     ]
   });
-  import_renderer7.Font.registerHyphenationCallback((w) => [w]);
+  import_renderer8.Font.registerHyphenationCallback((w) => [w]);
   registered = true;
 }
 
@@ -1006,6 +1067,7 @@ function placeholderPhoto(top, bottom, w = 800, h = 520) {
   Donut,
   Fotos,
   NetworkPattern,
+  PageMarker,
   REPORT_THEMES,
   ReporteDocument,
   ReporteSimpleDocument,
@@ -1025,5 +1087,6 @@ function placeholderPhoto(top, bottom, w = 800, h = 520) {
   Tabla,
   makeStyles,
   placeholderPhoto,
-  registerReportFonts
+  registerReportFonts,
+  renderReporteToBuffer
 });

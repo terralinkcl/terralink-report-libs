@@ -1,4 +1,5 @@
 import * as react_jsx_runtime from 'react/jsx-runtime';
+import React from 'react';
 
 interface ReportePhoto {
     url: string;
@@ -134,16 +135,22 @@ declare function Datos({ s, theme, items }: {
     theme: ReportTheme;
     items: DatoItem[];
 }): react_jsx_runtime.JSX.Element;
-declare function SeccionHead({ s, theme, num, titulo }: {
+declare function PageMarker({ id, onPageMarker }: {
+    id: string;
+    onPageMarker?: (num: string, page: number) => void;
+}): react_jsx_runtime.JSX.Element | null;
+declare function SeccionHead({ s, theme, num, titulo, onPageMarker, }: {
     s: Styles;
     theme: ReportTheme;
     num: string;
     titulo: string;
+    onPageMarker?: (num: string, page: number) => void;
 }): react_jsx_runtime.JSX.Element;
-declare function Subseccion({ s, num, ss }: {
+declare function Subseccion({ s, num, ss, onPageMarker, }: {
     s: Styles;
     num: string;
     ss: ReporteSubseccion;
+    onPageMarker?: (num: string, page: number) => void;
 }): react_jsx_runtime.JSX.Element;
 
 declare function Donut({ s, donut }: {
@@ -178,12 +185,17 @@ declare function CoverPage({ s, theme, meta, logo, }: {
     logo: string;
 }): react_jsx_runtime.JSX.Element;
 
-declare function ReporteDocument({ data, theme, logo, tocPageNumbers, }: {
+declare function ReporteDocument({ data, theme, logo, tocPageNumbers, tocPages, onPageMarker, }: {
     data: ReporteData;
     theme: ReportTheme;
     logo: string;
     tocPageNumbers?: boolean;
+    tocPages?: Record<string, number>;
+    onPageMarker?: (num: string, page: number) => void;
 }): react_jsx_runtime.JSX.Element;
+
+type RenderReporteProps = React.ComponentProps<typeof ReporteDocument>;
+declare function renderReporteToBuffer(props: RenderReporteProps): Promise<Buffer>;
 
 declare function ReporteSimpleDocument({ data, theme, logo, conPortada, }: {
     data: ReporteData;
@@ -196,4 +208,4 @@ declare function registerReportFonts(fontsDir?: string): void;
 
 declare function placeholderPhoto(top: [number, number, number], bottom: [number, number, number], w?: number, h?: number): string;
 
-export { type AccentLevel, Barras, CoverPage, type DatoItem, Datos, type DatosVariant, Donut, Fotos, type H1Variant, NetworkPattern, type NetworkPatternProps, REPORT_THEMES, type ReportTheme, type ReportThemeKey, type ReporteBarra, type ReporteBarraGrupo, type ReporteBarras, type ReporteData, ReporteDocument, type ReporteDonut, type ReporteDonutSegmento, type ReporteEnlace, type ReporteKpi, type ReporteMeta, type ReportePhoto, type ReporteSeccion, ReporteSimpleDocument, type ReporteSubseccion, type ReporteTabla, SeccionHead, type Styles, Subseccion, THEME_CORPORATE, THEME_EDITORIAL, THEME_ED_MINIMO, THEME_ED_SUAVE, THEME_ED_TINTA, THEME_PROPUESTA, THEME_ROMBOS_EDITORIAL, THEME_ROMBOS_PROPUESTA, THEME_ROMBOS_TESORERIA, THEME_TECNICO, THEME_TESORERIA, Tabla, makeStyles, placeholderPhoto, registerReportFonts };
+export { type AccentLevel, Barras, CoverPage, type DatoItem, Datos, type DatosVariant, Donut, Fotos, type H1Variant, NetworkPattern, type NetworkPatternProps, PageMarker, REPORT_THEMES, type RenderReporteProps, type ReportTheme, type ReportThemeKey, type ReporteBarra, type ReporteBarraGrupo, type ReporteBarras, type ReporteData, ReporteDocument, type ReporteDonut, type ReporteDonutSegmento, type ReporteEnlace, type ReporteKpi, type ReporteMeta, type ReportePhoto, type ReporteSeccion, ReporteSimpleDocument, type ReporteSubseccion, type ReporteTabla, SeccionHead, type Styles, Subseccion, THEME_CORPORATE, THEME_EDITORIAL, THEME_ED_MINIMO, THEME_ED_SUAVE, THEME_ED_TINTA, THEME_PROPUESTA, THEME_ROMBOS_EDITORIAL, THEME_ROMBOS_PROPUESTA, THEME_ROMBOS_TESORERIA, THEME_TECNICO, THEME_TESORERIA, Tabla, makeStyles, placeholderPhoto, registerReportFonts, renderReporteToBuffer };

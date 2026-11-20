@@ -527,27 +527,56 @@ function Datos({ s, theme, items }) {
     /* @__PURE__ */ jsx2(Text2, { style: s.fichaVal, children: d.value })
   ] }, i)) });
 }
-function SeccionHead({ s, theme, num, titulo }) {
+function PageMarker({ id, onPageMarker }) {
+  if (!onPageMarker) return null;
+  return /* @__PURE__ */ jsx2(
+    Text2,
+    {
+      style: { width: 0, height: 0, fontSize: 0 },
+      render: ({ pageNumber }) => {
+        onPageMarker(id, pageNumber);
+        return "";
+      }
+    }
+  );
+}
+function SeccionHead({
+  s,
+  theme,
+  num,
+  titulo,
+  onPageMarker
+}) {
+  const mk = /* @__PURE__ */ jsx2(PageMarker, { id: num, onPageMarker });
   if (theme.h1Variant === "chip") {
     return /* @__PURE__ */ jsxs2(View2, { style: s.h1Chip, children: [
+      mk,
       /* @__PURE__ */ jsx2(Text2, { style: s.h1ChipBox, children: num }),
       /* @__PURE__ */ jsx2(Text2, { style: s.h1ChipT, children: titulo })
     ] });
   }
   if (theme.h1Variant === "barra") {
     return /* @__PURE__ */ jsxs2(View2, { style: s.h1Barra, children: [
+      mk,
       /* @__PURE__ */ jsx2(Text2, { style: s.h1BarraN, children: `${num}.0` }),
       /* @__PURE__ */ jsx2(Text2, { style: s.h1BarraT, children: titulo })
     ] });
   }
   return /* @__PURE__ */ jsxs2(View2, { style: s.h1Numero, children: [
+    mk,
     /* @__PURE__ */ jsx2(Text2, { style: s.h1NumeroN, children: num }),
     /* @__PURE__ */ jsx2(Text2, { style: s.h1NumeroT, children: titulo })
   ] });
 }
-function Subseccion({ s, num, ss }) {
+function Subseccion({
+  s,
+  num,
+  ss,
+  onPageMarker
+}) {
   return /* @__PURE__ */ jsxs2(View2, { style: { marginBottom: 12 }, children: [
-    ss.titulo ? /* @__PURE__ */ jsxs2(View2, { style: s.h2Wrap, children: [
+    ss.titulo ? /* @__PURE__ */ jsxs2(View2, { style: s.h2Wrap, wrap: false, children: [
+      /* @__PURE__ */ jsx2(PageMarker, { id: num, onPageMarker }),
       /* @__PURE__ */ jsx2(View2, { style: s.h2Tick }),
       /* @__PURE__ */ jsx2(Text2, { style: s.h2Num, children: num }),
       /* @__PURE__ */ jsx2(Text2, { style: s.h2, children: ss.titulo })
@@ -702,14 +731,15 @@ function CoverPage({
 import React from "react";
 import { Document, Page as Page2, Text as Text4, View as View4 } from "@react-pdf/renderer";
 import { jsx as jsx5, jsxs as jsxs5 } from "react/jsx-runtime";
-function buildToc(data) {
+function buildToc(data, tocPages) {
   const rows = [];
+  const pg = (num) => tocPages && tocPages[num] != null ? `${tocPages[num]}` : "-";
   data.secciones.forEach((sec, i) => {
-    const page = 3 + i;
+    const page = pg(`${i + 1}`);
     rows.push({ nivel: 1, num: `${i + 1}`, titulo: sec.titulo, page });
     sec.sub.forEach((ss, j) => {
       if (!ss.titulo) return;
-      rows.push({ nivel: 2, num: `${i + 1}.${j + 1}`, titulo: ss.titulo, page });
+      rows.push({ nivel: 2, num: `${i + 1}.${j + 1}`, titulo: ss.titulo, page: pg(`${i + 1}.${j + 1}`) });
     });
   });
   return rows;
@@ -718,11 +748,13 @@ function ReporteDocument({
   data,
   theme,
   logo,
-  tocPageNumbers = true
+  tocPageNumbers = true,
+  tocPages,
+  onPageMarker
 }) {
   const s = makeStyles(theme);
   const { meta } = data;
-  const toc = buildToc(data);
+  const toc = buildToc(data, tocPages);
   return /* @__PURE__ */ jsxs5(Document, { children: [
     /* @__PURE__ */ jsx5(CoverPage, { s, theme, meta, logo }),
     /* @__PURE__ */ jsxs5(Page2, { size: "A4", style: s.page, children: [
@@ -756,11 +788,38 @@ function ReporteDocument({
         ] }, i)
       ) }),
       data.secciones.map((sec, i) => /* @__PURE__ */ jsxs5(React.Fragment, { children: [
-        /* @__PURE__ */ jsx5(View4, { break: true, children: /* @__PURE__ */ jsx5(SeccionHead, { s, theme, num: `${i + 1}`, titulo: sec.titulo }) }),
-        sec.sub.map((ss, j) => /* @__PURE__ */ jsx5(Subseccion, { s, num: `${i + 1}.${j + 1}`, ss }, j))
+        /* @__PURE__ */ jsx5(View4, { break: true, children: /* @__PURE__ */ jsx5(SeccionHead, { s, theme, num: `${i + 1}`, titulo: sec.titulo, onPageMarker }) }),
+        sec.sub.map((ss, j) => /* @__PURE__ */ jsx5(Subseccion, { s, num: `${i + 1}.${j + 1}`, ss, onPageMarker }, j))
       ] }, i))
     ] })
   ] });
+}
+
+// src/renderReporte.ts
+import React2 from "react";
+import { renderToBuffer } from "@react-pdf/renderer";
+var MAX_PASADAS = 4;
+function iguales(a, b) {
+  const ka = Object.keys(a);
+  return ka.length === Object.keys(b).length && ka.every((k) => a[k] === b[k]);
+}
+async function renderReporteToBuffer(props) {
+  let usadas = props.tocPages;
+  let buf;
+  for (let i = 0; i < MAX_PASADAS; i++) {
+    const medidas = {};
+    const onPageMarker = (num, page) => {
+      medidas[num] = page;
+      props.onPageMarker?.(num, page);
+    };
+    buf = await renderToBuffer(
+      React2.createElement(ReporteDocument, { ...props, tocPages: usadas, onPageMarker })
+    );
+    if (props.tocPageNumbers === false) return buf;
+    if (usadas && iguales(usadas, medidas)) return buf;
+    usadas = medidas;
+  }
+  return buf;
 }
 
 // src/ReporteSimpleDocument.tsx
@@ -951,6 +1010,7 @@ export {
   Donut,
   Fotos,
   NetworkPattern,
+  PageMarker,
   REPORT_THEMES,
   ReporteDocument,
   ReporteSimpleDocument,
@@ -970,5 +1030,6 @@ export {
   Tabla,
   makeStyles,
   placeholderPhoto,
-  registerReportFonts
+  registerReportFonts,
+  renderReporteToBuffer
 };

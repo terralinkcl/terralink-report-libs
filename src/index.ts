@@ -10,6 +10,8 @@ export { NetworkPattern } from "./NetworkPattern";
 export type { NetworkPatternProps } from "./NetworkPattern";
 export { CoverPage } from "./CoverPage";
 export { ReporteDocument } from "./ReporteDocument";
+export { renderReporteToBuffer } from "./renderReporte";
+export type { RenderReporteProps } from "./renderReporte";
 export { ReporteSimpleDocument } from "./ReporteSimpleDocument";
 export { registerReportFonts } from "./fonts";
 export { placeholderPhoto } from "./placeholder";

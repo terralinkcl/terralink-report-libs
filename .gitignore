@@ -2,3 +2,4 @@ node_modules/
 *.log
 _smoke.*
 .DS_Store
+TEST_CLAUDE/

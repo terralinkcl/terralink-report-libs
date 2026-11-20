@@ -302,10 +302,41 @@ export function Datos({ s, theme, items }: { s: Styles; theme: ReportTheme; item
 }
 
 // Encabezado de seccion (H1), segun la variante del tema.
-export function SeccionHead({ s, theme, num, titulo }: { s: Styles; theme: ReportTheme; num: string; titulo: string }) {
+// Marcador invisible de pagina (sin tamano, en el flujo): react-pdf invoca `render`
+// con el pageNumber donde queda ubicado el nodo; el ultimo valor reportado es el
+// definitivo (durante el layout se prueba pagina a pagina). Se coloca DENTRO del
+// bloque del titulo para que se mueva junto con el. Ver renderReporteToBuffer.
+export function PageMarker({ id, onPageMarker }: { id: string; onPageMarker?: (num: string, page: number) => void }) {
+  if (!onPageMarker) return null;
+  return (
+    <Text
+      style={{ width: 0, height: 0, fontSize: 0 }}
+      render={({ pageNumber }) => {
+        onPageMarker(id, pageNumber);
+        return "";
+      }}
+    />
+  );
+}
+
+export function SeccionHead({
+  s,
+  theme,
+  num,
+  titulo,
+  onPageMarker,
+}: {
+  s: Styles;
+  theme: ReportTheme;
+  num: string;
+  titulo: string;
+  onPageMarker?: (num: string, page: number) => void;
+}) {
+  const mk = <PageMarker id={num} onPageMarker={onPageMarker} />;
   if (theme.h1Variant === "chip") {
     return (
       <View style={s.h1Chip}>
+        {mk}
         <Text style={s.h1ChipBox}>{num}</Text>
         <Text style={s.h1ChipT}>{titulo}</Text>
       </View>
@@ -314,6 +345,7 @@ export function SeccionHead({ s, theme, num, titulo }: { s: Styles; theme: Repor
   if (theme.h1Variant === "barra") {
     return (
       <View style={s.h1Barra}>
+        {mk}
         <Text style={s.h1BarraN}>{`${num}.0`}</Text>
         <Text style={s.h1BarraT}>{titulo}</Text>
       </View>
@@ -321,17 +353,29 @@ export function SeccionHead({ s, theme, num, titulo }: { s: Styles; theme: Repor
   }
   return (
     <View style={s.h1Numero}>
+      {mk}
       <Text style={s.h1NumeroN}>{num}</Text>
       <Text style={s.h1NumeroT}>{titulo}</Text>
     </View>
   );
 }
 
-export function Subseccion({ s, num, ss }: { s: Styles; num: string; ss: ReporteSubseccion }) {
+export function Subseccion({
+  s,
+  num,
+  ss,
+  onPageMarker,
+}: {
+  s: Styles;
+  num: string;
+  ss: ReporteSubseccion;
+  onPageMarker?: (num: string, page: number) => void;
+}) {
   return (
     <View style={{ marginBottom: 12 }}>
       {ss.titulo ? (
-        <View style={s.h2Wrap}>
+        <View style={s.h2Wrap} wrap={false}>
+          <PageMarker id={num} onPageMarker={onPageMarker} />
           <View style={s.h2Tick} />
           <Text style={s.h2Num}>{num}</Text>
           <Text style={s.h2}>{ss.titulo}</Text>

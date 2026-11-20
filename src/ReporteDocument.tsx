@@ -9,25 +9,28 @@ import { CoverPage } from "./CoverPage";
 // contenidos con numeros de pagina) y jerarquia de titulos/subtitulos.
 // El layout es unico; el tema (themes.ts) define tipografia, paleta y variantes.
 //
-// Numeros de pagina del indice: cada seccion de nivel 1 arranca en pagina nueva
-// (break). Portada = pag. 1, indice = pag. 2, seccion i = pag. (3 + i). Valido
-// para secciones que caben en una pagina.
+// Numeros de pagina del indice: reales, via render en dos (o mas) pasadas. Cada
+// titulo (seccion y subseccion con titulo) lleva un marcador invisible que reporta
+// su pagina (`onPageMarker`); renderReporteToBuffer (renderReporte.ts) renderiza,
+// recolecta las paginas, y vuelve a renderizar pasando `tocPages` hasta estabilizar.
+// El indice reserva el mismo espacio con o sin `tocPages` (layout identico).
 
 interface TocRow {
   nivel: 1 | 2;
   num: string;
   titulo: string;
-  page: number;
+  page: string;
 }
 
-function buildToc(data: ReporteData): TocRow[] {
+function buildToc(data: ReporteData, tocPages?: Record<string, number>): TocRow[] {
   const rows: TocRow[] = [];
+  const pg = (num: string) => (tocPages && tocPages[num] != null ? `${tocPages[num]}` : "-");
   data.secciones.forEach((sec, i) => {
-    const page = 3 + i;
+    const page = pg(`${i + 1}`);
     rows.push({ nivel: 1, num: `${i + 1}`, titulo: sec.titulo, page });
     sec.sub.forEach((ss, j) => {
       if (!ss.titulo) return; // subsecciones sin titulo no van al indice
-      rows.push({ nivel: 2, num: `${i + 1}.${j + 1}`, titulo: ss.titulo, page });
+      rows.push({ nivel: 2, num: `${i + 1}.${j + 1}`, titulo: ss.titulo, page: pg(`${i + 1}.${j + 1}`) });
     });
   });
   return rows;
@@ -38,18 +41,24 @@ export function ReporteDocument({
   theme,
   logo,
   tocPageNumbers = true,
+  tocPages,
+  onPageMarker,
 }: {
   data: ReporteData;
   theme: ReportTheme;
   logo: string;
-  // Numeros de pagina en el indice. Validos cuando cada seccion cabe en una
-  // pagina (informe corto). En documentos con secciones multipagina (consolidado)
-  // conviene desactivarlos porque el calculo determinista deja de ser exacto.
+  // Numeros de pagina en el indice (por defecto si). Son exactos al renderizar con
+  // renderReporteToBuffer; con false el indice va sin numeros y basta una pasada.
   tocPageNumbers?: boolean;
+  // Pagina real de cada fila del indice (clave "2" o "2.3"). Sin esto el indice
+  // muestra "-". Lo provee renderReporteToBuffer.
+  tocPages?: Record<string, number>;
+  // Callback de los marcadores de pagina (pasada de medicion).
+  onPageMarker?: (num: string, page: number) => void;
 }) {
   const s = makeStyles(theme);
   const { meta } = data;
-  const toc = buildToc(data);
+  const toc = buildToc(data, tocPages);
 
   return (
     <Document>
@@ -100,10 +109,10 @@ export function ReporteDocument({
         {data.secciones.map((sec, i) => (
           <React.Fragment key={i}>
             <View break>
-              <SeccionHead s={s} theme={theme} num={`${i + 1}`} titulo={sec.titulo} />
+              <SeccionHead s={s} theme={theme} num={`${i + 1}`} titulo={sec.titulo} onPageMarker={onPageMarker} />
             </View>
             {sec.sub.map((ss, j) => (
-              <Subseccion key={j} s={s} num={`${i + 1}.${j + 1}`} ss={ss} />
+              <Subseccion key={j} s={s} num={`${i + 1}.${j + 1}`} ss={ss} onPageMarker={onPageMarker} />
             ))}
           </React.Fragment>
         ))}

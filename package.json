@@ -19,7 +19,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test test/toc.test.mjs"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
